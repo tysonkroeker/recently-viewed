@@ -76,7 +76,11 @@ jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="
 
    var moveAlong = function() {
      if (productHandleQueue.length && shown < config.howManyToShow) {
-       var url = "/products/" + productHandleQueue[0] + "?view=json";
+       var url = "/products/" + productHandleQueue[0] + ".js";
+       if(typeof config.view == 'string') {
+         url = "/products/" + productHandleQueue[0] + "?view=" + config.view;
+       }
+
        var xmlhttp;
        xmlhttp = new XMLHttpRequest();
        xmlhttp.onreadystatechange = function(){
@@ -88,6 +92,7 @@ jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="
                template.tmpl(product).appendTo(wrapper);
                productHandleQueue.shift();
                shown++;
+
                moveAlong();
              }
            }
