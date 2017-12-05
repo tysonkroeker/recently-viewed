@@ -7,7 +7,7 @@
  * http://www.gnu.org/licenses/gpl.html
  *
  */
- 
+
 jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="";m.expires=-1}var e="";if(m.expires&&(typeof m.expires=="number"||m.expires.toUTCString)){var f;if(typeof m.expires=="number"){f=new Date();f.setTime(f.getTime()+(m.expires*24*60*60*1000))}else{f=m.expires}e="; expires="+f.toUTCString()}var l=m.path?"; path="+(m.path):"";var g=m.domain?"; domain="+(m.domain):"";var a=m.secure?"; secure":"";document.cookie=[b,"=",encodeURIComponent(j),e,l,g,a].join("")}else{var d=null;if(document.cookie&&document.cookie!=""){var k=document.cookie.split(";");for(var h=0;h<k.length;h++){var c=jQuery.trim(k[h]);if(c.substring(0,b.length+1)==(b+"=")){d=decodeURIComponent(c.substring(b.length+1));break}}}return d}};
 
 /**
@@ -19,17 +19,17 @@ jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="
  * http://www.gnu.org/licenses/gpl.html
  *
  */
- 
+
  Shopify.Products = (function() {
 
-   var config = { 
+   var config = {
      howManyToShow: 3,
-     howManyToStoreInMemory: 10, 
-     wrapperId: 'recently-viewed-products', 
+     howManyToStoreInMemory: 10,
+     wrapperId: 'recently-viewed-products',
      templateId: 'recently-viewed-product-template',
      onComplete: null
    };
-   
+
    var productHandleQueue = [];
    var wrapper = null;
    var template = null;
@@ -51,7 +51,7 @@ jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="
        if (cookieValue !== null) {
          recentlyViewed = cookieValue.split(' ');
        }
-       return recentlyViewed;        
+       return recentlyViewed;
      },
      destroy: function() {
        jQuery.cookie(this.name, null, this.configuration);
@@ -62,45 +62,54 @@ jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="
        if (position !== -1) {
          recentlyViewed.splice(position, 1);
          this.write(recentlyViewed);
-       }       
+       }
      }
    };
-   
+
    var finalize = function() {
      wrapper.show();
      // If we have a callback.
      if (config.onComplete) {
        try { config.onComplete() } catch (error) { }
-     }  
+     }
    };
-   
+
    var moveAlong = function() {
      if (productHandleQueue.length && shown < config.howManyToShow) {
-       jQuery.ajax({
-         dataType: 'json',
-         url: '/products/' + productHandleQueue[0] + '.js',
-         cache: false,
-         success: function(product) {
-           template.tmpl(product).appendTo(wrapper); 
-           productHandleQueue.shift();
-           shown++;
-           moveAlong();
-         },
-         error: function() {
-           cookie.remove(productHandleQueue[0]);
-           productHandleQueue.shift();
-           moveAlong();
+       var url = "/products/" + productHandleQueue[0] + "?view=json";
+       var xmlhttp;
+       xmlhttp = new XMLHttpRequest();
+       xmlhttp.onreadystatechange = function(){
+         if (xmlhttp.readyState == 4 && xmlhttp.status == 200){
+           try{
+             var response = xmlhttp.responseText;
+             if(typeof response === 'string'){
+               product = JSON.parse(response);
+               template.tmpl(product).appendTo(wrapper);
+               productHandleQueue.shift();
+               shown++;
+               moveAlong();
+             }
+           }
+           catch(err){
+             cookie.remove(productHandleQueue[0]);
+             productHandleQueue.shift();
+             moveAlong();
+           }
          }
-       });
+       };
+       xmlhttp.open("GET", url, true);
+       xmlhttp.send();
+
      }
      else {
        finalize();
      }
-     
+
    };
-   
+
    return {
-    
+
      resizeImage: function(src, size) {
        if (size == null) {
          return src;
@@ -131,18 +140,18 @@ jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="
 
        // Read cookie.
        productHandleQueue = cookie.read();
-       
+
        // Template and element where to insert.
        template = jQuery('#' + config.templateId);
        wrapper = jQuery('#' + config.wrapperId);
-       
+
        // How many products to show.
        config.howManyToShow = Math.min(productHandleQueue.length, config.howManyToShow);
 
        // If we have any to show.
        if (config.howManyToShow && template.length && wrapper.length) {
          // Getting each product with an Ajax call and rendering it on the page.
-         moveAlong();    
+         moveAlong();
        }
 
      },
@@ -152,9 +161,9 @@ jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="
      },
 
      clearList: function() {
-       cookie.destroy();      
+       cookie.destroy();
      },
-     
+
      recordRecentlyViewed: function(params) {
 
        var params = params || {};
@@ -182,14 +191,14 @@ jQuery.cookie=function(b,j,m){if(typeof j!="undefined"){m=m||{};if(j===null){j="
          else {
            // Remove the product and place it at start of list.
            recentlyViewed.splice(position, 1);
-           recentlyViewed.unshift(productHandle);              
+           recentlyViewed.unshift(productHandle);
          }
 
          // Update cookie.
          cookie.write(recentlyViewed);
 
        }
-       
+
      }
 
    };
